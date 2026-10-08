@@ -1,6 +1,0 @@
-FINAL PORTFOLIO PACKAGE
-========================
-Upload index.html, css/, js/, and README.md to the root of:
-yash-007-1/yash-007-1.github.io
-
-GitHub Pages should deploy the static site automatically.
