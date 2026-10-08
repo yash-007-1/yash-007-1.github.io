@@ -6,39 +6,64 @@ const qs=(s,e=document)=>e.querySelector(s), qsa=(s,e=document)=>[...e.querySele
 const field=qs('#logo-field');
 const reduceMotion=typeof matchMedia==='function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const releaseBoot=()=>{const boot=qs('#boot'); if(boot) boot.classList.add('hidden')};
-window.setTimeout(releaseBoot, 1200);
+window.setTimeout(releaseBoot,1200);
 let px=.5,py=.5,scrollTop=0;
 const orbitItems=[];
+
+// Brand marks are an ambient background layer, not a swarm. Their motion is intentionally
+// slow, peripheral and deterministic so the content always remains the visual priority.
+const logoAnchors=[
+  [6,13],[16,29],[5,50],[10,74],[17,89],[29,8],[42,94],[58,8],[71,93],
+  [83,12],[94,30],[96,51],[90,73],[82,89],[72,9],[28,91],[4,35],[95,87]
+];
 
 function buildLogos(){
   if(!field) return;
   orbitItems.length=0;
-  const count=innerWidth<760?14:34;
+  const count=innerWidth<560?8:(innerWidth<900?12:18);
   field.innerHTML='';
   for(let i=0;i<count;i++){
     const c=companies[i%companies.length], el=document.createElement('div');
-    el.className='brand-orbit'; el.style.setProperty('--brand',c[2]);
-    const img=document.createElement('img'); img.src=`https://cdn.simpleicons.org/${c[0]}/${c[2].slice(1)}`; img.alt=''; el.appendChild(img);
-    const label=document.createElement('span'); label.textContent=c[1].toUpperCase(); el.appendChild(label); field.appendChild(el);
-    orbitItems.push({el,idx:i,phase:Math.random()*Math.PI*2,speed:(.000075+Math.random()*.00013)*(Math.random()>.5?1:-1),radius:.13+Math.random()*.28,yRadius:.08+Math.random()*.17,depth:.65+Math.random()*.55,lane:i%8,scale:.68+Math.random()*.65,drift:Math.random()*7,spin:(Math.random()>.5?1:-1)*(8+Math.random()*24)});
+    const [ax,ay]=logoAnchors[i];
+    const depth=.72+(i%5)*.08;
+    el.className='brand-orbit';
+    el.style.setProperty('--brand',c[2]);
+    const img=document.createElement('img');
+    img.src=`https://cdn.simpleicons.org/${c[0]}/${c[2].slice(1)}`;
+    img.alt='';
+    el.appendChild(img);
+    field.appendChild(el);
+    orbitItems.push({
+      el,idx:i,ax,ay,phase:(i*1.73)%Math.PI*2,
+      period:34000+(i%6)*5200,
+      ampX:18+(i%4)*11,
+      ampY:7+(i%5)*4,
+      depth,
+      size:26+(i%4)*6,
+      drift:(i%3)*.9
+    });
   }
 }
+
 function animateLogos(t){
   const w=innerWidth,h=innerHeight;
   orbitItems.forEach(o=>{
-    const p=o.phase+t*o.speed*1000, lane=o.lane;
-    const bandY=(.11+(lane%4)*.25)*h;
-    const bandX=(.05+((lane*1.13)%7)*.14)*w;
-    const x=bandX+Math.sin(p)*w*o.radius+(px-.5)*40*o.depth+Math.sin(p*1.8+o.drift)*w*.045-20;
-    const y=bandY+Math.cos(p*1.17+o.drift)*h*o.yRadius+(py-.5)*30*o.depth+Math.sin(p*.53+lane)*h*.05-20-scrollTop*.008;
-    const z=.72+.28*Math.sin(p+lane), scale=o.scale*(.83+z*.23);
-    o.el.style.transform=`translate3d(${x}px,${y}px,0) rotate(${p*o.spin}deg) scale(${scale})`;
-    o.el.style.opacity=(.28+z*.55).toFixed(2);
-    o.el.style.zIndex=String(Math.floor(z*30));
+    const theta=t/o.period*Math.PI*2+o.phase;
+    const x0=w*(o.ax/100), y0=h*(o.ay/100);
+    const x=x0+Math.sin(theta)*o.ampX*o.depth+(px-.5)*9*o.depth-o.size/2;
+    const y=y0+Math.cos(theta*0.78+o.drift)*o.ampY*o.depth+(py-.5)*7*o.depth-o.size/2;
+    const breathe=.93+.07*Math.sin(theta*.55+o.idx);
+    const rotation=Math.sin(theta*.62+o.idx)*2.4;
+    const opacity=.18+(.12*(.5+.5*Math.sin(theta+o.idx)))+(o.depth-.72)*.08;
+    o.el.style.transform=`translate3d(${x}px,${y}px,0) rotate(${rotation}deg) scale(${breathe})`;
+    o.el.style.opacity=opacity.toFixed(2);
+    o.el.style.zIndex='1';
   });
   if(!reduceMotion) requestAnimationFrame(animateLogos);
 }
-buildLogos(); if(!reduceMotion) requestAnimationFrame(animateLogos);
+
+buildLogos();
+if(!reduceMotion) requestAnimationFrame(animateLogos);
 
 const logoWall=qs('#logo-wall');
 if(logoWall) companies.slice(0,18).forEach(c=>{
