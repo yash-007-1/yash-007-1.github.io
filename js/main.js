@@ -1,179 +1,86 @@
-const companies = [
-  ["google","Google","#4285F4"],["amazon","Amazon","#FF9900"],["microsoft","Microsoft","#F25022"],
-  ["openai","OpenAI","#10A37F"],["nvidia","NVIDIA","#76B900"],["meta","Meta","#0866FF"],
-  ["apple","Apple","#F5F5F7"],["adobe","Adobe","#FF0000"],["oracle","Oracle","#F80000"],
-  ["ibm","IBM","#4589FF"],["intel","Intel","#0071C5"],["github","GitHub","#F0F0F0"],
-  ["amazonaws","AWS","#FF9900"],["zoho","Zoho","#F24E1E"],["salesforce","Salesforce","#00A1E0"],
-  ["figma","Figma","#F24E1E"],["docker","Docker","#2496ED"],["python","Python","#3776AB"],
-  ["react","React","#61DAFB"],["typescript","TypeScript","#3178C6"],["nodejs","Node.js","#5FA04E"],
-  ["postgresql","PostgreSQL","#4169E1"],["mongodb","MongoDB","#47A248"],["tensorflow","TensorFlow","#FF6F00"]
+const companies=[
+ ['google','Google','#4285F4'],['amazon','Amazon','#FF9900'],['microsoft','Microsoft','#F25022'],['openai','OpenAI','#10A37F'],['nvidia','NVIDIA','#76B900'],['meta','Meta','#0866FF'],['apple','Apple','#F5F5F7'],['adobe','Adobe','#FF0000'],['oracle','Oracle','#F80000'],['ibm','IBM','#4589FF'],['intel','Intel','#0071C5'],['github','GitHub','#F0F0F0'],['amazonaws','AWS','#FF9900'],['zoho','Zoho','#F24E1E'],['salesforce','Salesforce','#00A1E0'],['figma','Figma','#F24E1E'],['docker','Docker','#2496ED'],['python','Python','#3776AB'],['react','React','#61DAFB'],['typescript','TypeScript','#3178C6'],['nodejs','Node.js','#5FA04E'],['postgresql','PostgreSQL','#4169E1'],['mongodb','MongoDB','#47A248'],['tensorflow','TensorFlow','#FF6F00']
 ];
 
-const field = document.getElementById("logo-field");
-const logoItems = [];
-const isMobile = innerWidth < 700;
-const logoCount = isMobile ? 20 : 42;
+const qs=(s,e=document)=>e.querySelector(s), qsa=(s,e=document)=>[...e.querySelectorAll(s)];
+const field=qs('#logo-field');
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let px=.5,py=.5,scrollTop=0;
+const orbitItems=[];
 
-/* The logos are deliberately duplicated into several trajectories.
-   They are not a single orbit: the swarm crosses the entire viewport at
-   different depths, speeds, scales and brand-colour glows. */
-for(let i=0;i<logoCount;i++){
-  const company = companies[i % companies.length];
-  const el = document.createElement("div");
-  el.className = "brand-logo";
-  el.style.setProperty("--brand", company[2]);
-  el.style.setProperty("--opacity", (0.25 + Math.random()*0.55).toFixed(2));
-
-  const img = document.createElement("img");
-  img.src = `https://cdn.simpleicons.org/${company[0]}/${company[2].replace("#","")}`;
-  img.alt = "";
-  img.loading = "lazy";
-  el.appendChild(img);
-  field.appendChild(el);
-
-  logoItems.push({
-    el,
-    phase: Math.random()*Math.PI*2,
-    speed: 0.00010 + Math.random()*0.00022,
-    band: i % 7,
-    radius: 0.13 + Math.random()*0.26,
-    wobble: 35 + Math.random()*110,
-    scale: 0.62 + Math.random()*0.82,
-    tilt: (Math.random()-.5)*2,
-    depth: 0.55 + Math.random()*0.8
-  });
-}
-
-let time = 0;
-let scrollYPos = 0;
-let pointerX = .5, pointerY = .5;
-
-function animateLogos(now){
-  time = now;
-  const w = innerWidth, h = innerHeight;
-
-  logoItems.forEach((o,i)=>{
-    const p = o.phase + now*o.speed;
-    const lane = o.band;
-
-    const cx = w*(0.06 + (lane*0.145) % 0.90);
-    const cy = h*(0.08 + ((lane*0.19) % 0.82));
-    const rx = w*(o.radius*(lane%2 ? 1.28 : .88) + .10);
-    const ry = h*(.11 + o.radius*.44);
-
-    const x = cx + Math.cos(p)*rx + Math.sin(p*.61 + lane)*o.wobble
-              + (pointerX-.5)*34*o.depth - 22;
-    const y = cy + Math.sin(p*1.13)*ry + Math.cos(p*.57 + lane)*o.wobble*.7
-              + (pointerY-.5)*24*o.depth + scrollYPos*.018 - 22;
-
-    const z = .62 + .38*Math.sin(p + lane*.8);
-    const scale = o.scale*(.82 + z*.35);
-
-    o.el.style.transform =
-      `translate3d(${x}px,${y}px,0) rotate(${p*38*o.tilt}deg) scale(${scale})`;
-    o.el.style.zIndex = String(Math.floor(z*20));
-  });
-
-  requestAnimationFrame(animateLogos);
-}
-requestAnimationFrame(animateLogos);
-
-addEventListener("pointermove", e=>{
-  pointerX = e.clientX/innerWidth;
-  pointerY = e.clientY/innerHeight;
-},{passive:true});
-
-addEventListener("scroll",()=>{
-  scrollYPos = scrollY;
-  document.querySelector(".nav")?.classList.toggle("scrolled", scrollY > 30);
-},{passive:true});
-
-/* Entrance system */
-addEventListener("load",()=>setTimeout(()=>document.body.classList.add("loaded"),650));
-
-const revealObserver = new IntersectionObserver(entries=>{
-  entries.forEach(entry=>{
-    if(entry.isIntersecting){
-      entry.target.classList.add("visible");
-      revealObserver.unobserve(entry.target);
-    }
-  });
-},{threshold:.12});
-
-document.querySelectorAll(".reveal").forEach((el,i)=>{
-  el.style.transitionDelay = `${Math.min(i%6,5)*65}ms`;
-  revealObserver.observe(el);
-});
-
-/* Subtle particle field */
-const canvas = document.getElementById("particles");
-const ctx = canvas.getContext("2d");
-let particles = [];
-
-function resizeCanvas(){
-  const dpr = Math.min(devicePixelRatio || 1, 2);
-  canvas.width = innerWidth*dpr;
-  canvas.height = innerHeight*dpr;
-  canvas.style.width = innerWidth+"px";
-  canvas.style.height = innerHeight+"px";
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-
-  const count = Math.min(120, Math.floor(innerWidth*innerHeight/13000));
-  particles = Array.from({length:count},()=>({
-    x:Math.random()*innerWidth,y:Math.random()*innerHeight,
-    r:.2+Math.random()*.8,
-    vx:(Math.random()-.5)*.09,vy:(Math.random()-.5)*.09,
-    a:.07+Math.random()*.25
-  }));
-}
-function drawParticles(){
-  ctx.clearRect(0,0,innerWidth,innerHeight);
-  for(const p of particles){
-    p.x += p.vx; p.y += p.vy;
-    if(p.x<0)p.x=innerWidth;if(p.x>innerWidth)p.x=0;
-    if(p.y<0)p.y=innerHeight;if(p.y>innerHeight)p.y=0;
-    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-    ctx.fillStyle=`rgba(255,255,255,${p.a})`;ctx.fill();
-  }
-  requestAnimationFrame(drawParticles);
-}
-resizeCanvas();drawParticles();addEventListener("resize",resizeCanvas);
-
-/* Command palette */
-const menu = document.getElementById("command-menu");
-const openBtn = document.getElementById("command-open");
-const closeBtn = document.getElementById("command-close");
-function setMenu(open){
-  menu.classList.toggle("open",open);
-  menu.setAttribute("aria-hidden",String(!open));
-}
-openBtn?.addEventListener("click",()=>setMenu(true));
-closeBtn?.addEventListener("click",()=>setMenu(false));
-menu?.addEventListener("click",e=>{if(e.target===menu)setMenu(false)});
-document.addEventListener("keydown",e=>{
-  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="k"){e.preventDefault();setMenu(true)}
-  if(e.key==="Escape")setMenu(false);
-});
-menu?.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>setMenu(false)));
-
-/* Live public GitHub layer — fails gracefully if API/rate limits block it. */
-async function loadGitHub(){
-  const status = document.getElementById("github-status");
-  try{
-    const response = await fetch("https://api.github.com/users/yash-007-1",{
-      headers:{"Accept":"application/vnd.github+json"}
-    });
-    if(!response.ok) throw new Error("GitHub unavailable");
-    const data = await response.json();
-    document.getElementById("repo-count").textContent = data.public_repos ?? "—";
-    document.getElementById("followers").textContent = data.followers ?? "—";
-    const date = data.updated_at ? new Date(data.updated_at) : null;
-    document.getElementById("updated").textContent = date
-      ? date.toLocaleDateString("en-IN",{day:"2-digit",month:"short"}).toUpperCase()
-      : "—";
-    status.textContent = "Public profile data connected to GitHub.";
-  }catch{
-    status.textContent = "GitHub data layer is ready; live API data is unavailable right now.";
+function buildLogos(){
+  orbitItems.length=0;
+  const count=innerWidth<760?14:34;
+  field.innerHTML='';
+  for(let i=0;i<count;i++){
+    const c=companies[i%companies.length], el=document.createElement('div');
+    el.className='brand-orbit'; el.style.setProperty('--brand',c[2]);
+    const img=document.createElement('img'); img.src=`https://cdn.simpleicons.org/${c[0]}/${c[2].slice(1)}`; img.alt=''; el.appendChild(img);
+    const label=document.createElement('span'); label.textContent=c[1].toUpperCase(); el.appendChild(label); field.appendChild(el);
+    orbitItems.push({el,idx:i,phase:Math.random()*Math.PI*2,speed:(.000075+Math.random()*.00013)*(Math.random()>.5?1:-1),radius:.13+Math.random()*.28,yRadius:.08+Math.random()*.17,depth:.65+Math.random()*.55,lane:i%8,scale:.68+Math.random()*.65,drift:Math.random()*7,spin:(Math.random()>.5?1:-1)*(8+Math.random()*24)});
   }
 }
+function animateLogos(t){
+  const w=innerWidth,h=innerHeight;
+  orbitItems.forEach(o=>{
+    const p=o.phase+t*o.speed*1000, lane=o.lane;
+    const bandY=(.11+(lane%4)*.25)*h;
+    const bandX=(.05+((lane*1.13)%7)*.14)*w;
+    const x=bandX+Math.sin(p)*w*o.radius+(px-.5)*40*o.depth+Math.sin(p*1.8+o.drift)*w*.045-20;
+    const y=bandY+Math.cos(p*1.17+o.drift)*h*o.yRadius+(py-.5)*30*o.depth+Math.sin(p*.53+lane)*h*.05-20-scrollTop*.008;
+    const z=.72+.28*Math.sin(p+lane), scale=o.scale*(.83+z*.23);
+    o.el.style.transform=`translate3d(${x}px,${y}px,0) rotate(${p*o.spin}deg) scale(${scale})`;
+    o.el.style.opacity=(.28+z*.55).toFixed(2);
+    o.el.style.zIndex=String(Math.floor(z*30));
+  });
+  if(!reduceMotion) requestAnimationFrame(animateLogos);
+}
+buildLogos(); if(!reduceMotion) requestAnimationFrame(animateLogos);
+
+const logoWall=qs('#logo-wall');
+companies.slice(0,18).forEach(c=>{
+  const item=document.createElement('div'),img=document.createElement('img');
+  img.src=`https://cdn.simpleicons.org/${c[0]}/${c[2].slice(1)}`; img.alt=''; item.append(img,document.createTextNode(c[1].toUpperCase())); logoWall.appendChild(item);
+});
+
+const space=qs('#space'),ctx=space.getContext('2d');let stars=[];
+function resizeSpace(){
+  const dpr=Math.min(devicePixelRatio||1,2); space.width=innerWidth*dpr;space.height=innerHeight*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+  const n=Math.min(170,Math.floor(innerWidth*innerHeight/10500));stars=Array.from({length:n},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:.15+Math.random()*.9,a:.05+Math.random()*.35,v:.01+Math.random()*.03,p:Math.random()*6}));
+}
+function drawSpace(){ctx.clearRect(0,0,innerWidth,innerHeight);for(const s of stars){s.x+=s.v;if(s.x>innerWidth)s.x=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(160,215,255,${s.a*(.65+.35*Math.sin(performance.now()*.001+s.p))})`;ctx.fill()} if(!reduceMotion) requestAnimationFrame(drawSpace)}
+resizeSpace();drawSpace();addEventListener('resize',()=>{resizeSpace();buildLogos();});
+
+addEventListener('pointermove',e=>{px=e.clientX/innerWidth;py=e.clientY/innerHeight;qs('#cursor-core').style.left=e.clientX+'px';qs('#cursor-core').style.top=e.clientY+'px';qs('#cursor-ring').style.left=e.clientX+'px';qs('#cursor-ring').style.top=e.clientY+'px';},{passive:true});
+qsa('a,button,.project-card.compact,.flagship').forEach(el=>{el.addEventListener('mouseenter',()=>qs('#cursor-ring').classList.add('hover'));el.addEventListener('mouseleave',()=>qs('#cursor-ring').classList.remove('hover'))});
+addEventListener('scroll',()=>{scrollTop=scrollY;qs('.topbar').classList.toggle('scrolled',scrollTop>35);updateActiveNav();},{passive:true});
+
+function updateActiveNav(){const sections=['home','work','research','stack','contact'];let current='home';for(const id of sections){const s=qs('#'+id);if(s && scrollY>=s.offsetTop-260)current=id;}qsa('.main-nav a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')===`#${current}`));qsa('.side-item').forEach((el,i)=>el.classList.toggle('active',i===sections.indexOf(current)));}
+
+setTimeout(()=>qs('#boot').classList.add('hidden'),1150);
+const observer=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}}),{threshold:.12});qsa('.reveal').forEach((el,i)=>{el.style.transitionDelay=`${Math.min(i%6,5)*60}ms`;observer.observe(el)});
+
+const palette=qs('#palette'),openPal=qs('#open-palette'),closePal=qs('#close-palette'),input=qs('#palette-input');
+function togglePalette(v){palette.classList.toggle('open',v);palette.setAttribute('aria-hidden',String(!v));if(v)setTimeout(()=>input.focus(),50)}
+openPal.addEventListener('click',()=>togglePalette(true));closePal.addEventListener('click',()=>togglePalette(false));palette.addEventListener('click',e=>{if(e.target===palette)togglePalette(false)});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();togglePalette(true)} if(e.key==='Escape'){togglePalette(false);closeModal()}});
+qsa('.palette-list a').forEach(a=>a.addEventListener('click',()=>togglePalette(false)));
+input.addEventListener('input',()=>{const q=input.value.toLowerCase();qsa('.palette-list a').forEach(a=>a.style.display=a.textContent.toLowerCase().includes(q)?'grid':'none')});
+
+const projects={
+ argus:{kicker:'01 / FLAGSHIP SYSTEM',title:'ARGUS V',copy:'Investigation and evidence intelligence platform built around structured evidence, AI-assisted analysis, computer vision, machine-learning features and production-oriented APIs.',role:'SYSTEM ARCHITECT / BUILDER',focus:'AI / AGENTS / EVIDENCE',stack:'React · TypeScript · FastAPI · SQLAlchemy'},
+ mindcue:{kicker:'02 / COMPUTER VISION',title:'MindCue',copy:'Facial-expression analysis and ML experimentation focused on converting visual signals into useful predictions and measurable model behaviour.',role:'ML / COMPUTER VISION',focus:'VISION / CLASSIFICATION',stack:'Python · OpenCV · ML'},
+ rover:{kicker:'03 / ROBOTICS',title:'Rover Path Recovery',copy:'AI-assisted navigation and path recovery workflow for autonomous rover scenarios, focused on decision logic, recovery and route reasoning.',role:'ROBOTICS / AI',focus:'PLANNING / RECOVERY',stack:'AI · Planning · Robotics'},
+ imrt:{kicker:'04 / RESEARCH',title:'IMRT Planning Agent',copy:'SARSA-based optimization research exploring intelligent dose-planning decisions inside radiotherapy workflows.',role:'RESEARCH / RL',focus:'OPTIMIZATION / RL',stack:'SARSA · Reinforcement Learning'},
+ lifeline:{kicker:'05 / FULL STACK',title:'LIFELINE',copy:'Blood and organ donation management system designed as a complete application for managing users, data, discovery and workflows.',role:'FULL STACK',focus:'DATA / PRODUCT',stack:'React · Next.js · Database'}
+};
+const modal=qs('#project-modal');
+function openModal(id){const p=projects[id];if(!p)return;qs('#modal-kicker').textContent=p.kicker;qs('#modal-title').textContent=p.title;qs('#modal-copy').textContent=p.copy;qs('#modal-role').textContent=p.role;qs('#modal-focus').textContent=p.focus;qs('#modal-stack').textContent=p.stack;modal.classList.add('open');modal.setAttribute('aria-hidden','false')}
+function closeModal(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
+qsa('[data-project]').forEach(card=>card.addEventListener('click',e=>{if(e.target.closest('a'))return;openModal(card.dataset.project)}));
+qs('#modal-close').addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+
+qsa('.topic').forEach(t=>t.addEventListener('click',()=>{qsa('.topic').forEach(x=>x.classList.remove('active'));t.classList.add('active')}));
+
+async function loadGitHub(){const status=qs('#github-status');try{const res=await fetch('https://api.github.com/users/yash-007-1',{headers:{Accept:'application/vnd.github+json'}});if(!res.ok)throw new Error('github unavailable');const data=await res.json();qs('#repo-count').textContent=data.public_repos??'—';qs('#followers').textContent=data.followers??'—';qs('#updated').textContent=data.updated_at?new Date(data.updated_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}).toUpperCase():'—';status.textContent='LIVE PUBLIC PROFILE DATA / GITHUB';}catch{status.textContent='GITHUB DATA LAYER READY / LIVE API UNAVAILABLE';}}
 loadGitHub();
