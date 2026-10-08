@@ -1,5 +1,0 @@
-ULTIMATE BUILD — 2026-10-08
-
-Replace the old site files with this build.
-Upload the entire contents to the repository root.
-After GitHub Pages redeploys, hard-refresh once (Ctrl+Shift+R) if the browser shows a previous cached version.
